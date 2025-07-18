@@ -77,6 +77,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func renderInput(ti textinput.Model) string {
+	if ti.Value() == "" {
+		return "> _"
+	}
+	return ti.View()
+}
+
 func (m model) View() string {
 	// 阶段 1：任务名输入
 	if !m.isReady {
@@ -87,7 +94,7 @@ func (m model) View() string {
 			BorderForeground(lipgloss.Color("228")).
 			Width(40)
 
-		return style.Render("请输入任务名后按 Enter 开始：\n\n" + m.textInput.View())
+		return style.Render("Enter task name: \n\n" + renderInput(m.textInput))
 	}
 	// 倒计时逻辑
 	total := int(m.timeLeft.Seconds())
@@ -119,6 +126,9 @@ func main() {
 	ti := textinput.New()
 	ti.Placeholder = "Enter your task name"
 	ti.Focus()
+	ti.Cursor.Style = lipgloss.NewStyle().
+		Underline(true).
+		Foreground(lipgloss.Color("12"))
 
 	m := model{
 		textInput: ti,
