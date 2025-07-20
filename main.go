@@ -14,7 +14,7 @@ type model struct {
 	textInput textinput.Model
 	timeLeft  time.Duration
 	isRunning bool
-	isReady   bool // if the user has entered a task name
+	isReady   bool // 是否输入任务名
 	taskName  string
 }
 
@@ -34,15 +34,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tickMsg:
-		if m.isRunning && m.timeLeft > 0 {
-			m.timeLeft -= time.Second
-			if m.timeLeft <= 0 {
-				return m, tea.Quit
+		// 每秒都会触发，不管是暂停还是运行
+		if m.isRunning {
+			// 正常倒计时
+			if m.timeLeft > 0 {
+				m.timeLeft -= time.Second
+				if m.timeLeft <= 0 {
+					return m, tea.Quit
+				}
 			}
-			return m, tick()
 		}
 		// 如果暂停或时间到了，不再返回 tick
-		return m, nil
+		return m, tick()
 
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -50,12 +53,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case "s":
+			// 只切换状态，不注册新 tick（避免多重加速）
 			if m.isReady {
 				m.isRunning = !m.isRunning
-				// ✅ 只在从暂停 → 开始时返回 tick
-				if m.isRunning && m.timeLeft > 0 {
-					return m, tick()
-				}
 				return m, nil
 			}
 		}
