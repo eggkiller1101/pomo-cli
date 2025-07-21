@@ -14,7 +14,7 @@ type model struct {
 	textInput textinput.Model
 	timeLeft  time.Duration
 	isRunning bool
-	isReady   bool // 是否输入任务名
+	isReady   bool // if the user has entered a task name
 	taskName  string
 }
 
@@ -34,9 +34,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tickMsg:
-		// 每秒都会触发，不管是暂停还是运行
+		// Every second will trigger, whether paused or running
 		if m.isRunning {
-			// 正常倒计时
+			// Normal countdown
 			if m.timeLeft > 0 {
 				m.timeLeft -= time.Second
 				if m.timeLeft <= 0 {
@@ -44,7 +44,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
-		// 如果暂停或时间到了，不再返回 tick
+		// If paused or time's up, don't return tick
 		return m, tick()
 
 	case tea.KeyMsg:
@@ -53,7 +53,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case "s":
-			// 只切换状态，不注册新 tick（避免多重加速）
+			// Only switch state, don't register new tick (avoid multiple acceleration)
 			if m.isReady {
 				m.isRunning = !m.isRunning
 				return m, nil
@@ -61,7 +61,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if !m.isReady {
-			// 阶段 1：任务名输入
+			// Stage 1: Task name input
 			switch msg.Type {
 			case tea.KeyEnter:
 				m.taskName = m.textInput.Value()
@@ -90,7 +90,7 @@ func renderInput(ti textinput.Model) string {
 }
 
 func (m model) View() string {
-	// 阶段 1：任务名输入
+	// Stage 1: Task name input
 	if !m.isReady {
 		style := lipgloss.NewStyle().
 			Padding(1, 2).
@@ -102,7 +102,7 @@ func (m model) View() string {
 		return style.Render("Enter task name: \n\n" + renderInput(m.textInput))
 	}
 
-	// 倒计时逻辑
+	// Countdown logic
 	total := int(m.timeLeft.Seconds())
 	if total < 0 {
 		total = 0
@@ -110,13 +110,13 @@ func (m model) View() string {
 	mins := total / 60
 	secs := total % 60
 
-	// 基础内容
+	// Basic content
 	content := fmt.Sprintf(
 		"🍅 Task: %s\n\n⏳ Time Left：%02dm:%02ds",
 		m.taskName, mins, secs,
 	)
 
-	// 如果暂停，则插入“暂停提示”
+	// If paused, insert "paused" prompt
 	if !m.isRunning {
 		pauseBox := lipgloss.NewStyle().
 			Foreground(lipgloss.Color("13")).
@@ -125,14 +125,14 @@ func (m model) View() string {
 			Bold(true).
 			Render("⏸ Paused, Enter [s] to continue")
 
-		// 插入到 content中（加在倒计时下面）
+		// Insert into content (below the countdown)
 		content += "\n\n" + pauseBox
 	}
 
-	// 控制提示
+	// Controls
 	controls := "\n\n[s] Start/Pause	[q] Quit"
 
-	// 整体框样式
+	// Overll layout style
 	style := lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("228")).
@@ -145,7 +145,7 @@ func (m model) View() string {
 }
 
 func main() {
-	// 初始化textInput并写入model
+	// Initialize textInput and write it in model
 	ti := textinput.New()
 	ti.Placeholder = "Enter your task name"
 	ti.Focus()
